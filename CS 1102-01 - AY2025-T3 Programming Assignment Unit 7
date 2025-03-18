@@ -1,0 +1,240 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class StudentManagementSystemGUI extends JFrame {
+
+    private List<Student> students = new ArrayList<>();
+    private List<Course> courses = new ArrayList<>();
+    private Map<Student, Map<Course, String>> grades = new HashMap<>();
+
+    private JTable studentTable;
+    private DefaultTableModel studentTableModel;
+    private JComboBox<Course> courseComboBox;
+    private JComboBox<Student> studentComboBox;
+    private JTextArea studentDetailsTextArea;
+
+    public StudentManagementSystemGUI() {
+        setTitle("Student Management System");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        createMenu();
+        createStudentPanel();
+        createCoursePanel();
+        createGradePanel();
+
+        setVisible(true);
+        initializeData();
+    }
+
+    private void createMenu() {
+        JMenuBar menuBar = new JMenuBar();
+        JMenu studentMenu = new JMenu("Student");
+        JMenuItem addStudentMenuItem = new JMenuItem("Add Student");
+        JMenuItem updateStudentMenuItem = new JMenuItem("Update Student");
+        JMenuItem viewStudentsMenuItem = new JMenuItem("View Students");
+
+        addStudentMenuItem.addActionListener(e -> showAddStudentDialog());
+        updateStudentMenuItem.addActionListener(e -> showUpdateStudentDialog());
+        viewStudentsMenuItem.addActionListener(e -> updateStudentTable());
+
+        studentMenu.add(addStudentMenuItem);
+        studentMenu.add(updateStudentMenuItem);
+        studentMenu.add(viewStudentsMenuItem);
+        menuBar.add(studentMenu);
+
+        setJMenuBar(menuBar);
+    }
+
+    private void createStudentPanel() {
+        JPanel studentPanel = new JPanel(new BorderLayout());
+        studentTableModel = new DefaultTableModel(new Object[]{"ID", "Name", "Age"}, 0);
+        studentTable = new JTable(studentTableModel);
+        JScrollPane scrollPane = new JScrollPane(studentTable);
+        studentPanel.add(scrollPane, BorderLayout.CENTER);
+        add(studentPanel, BorderLayout.NORTH);
+    }
+
+    private void createCoursePanel() {
+        JPanel coursePanel = new JPanel(new FlowLayout());
+        courseComboBox = new JComboBox<>();
+        JButton enrollButton = new JButton("Enroll");
+        coursePanel.add(new JLabel("Course:"));
+        coursePanel.add(courseComboBox);
+        coursePanel.add(enrollButton);
+
+        enrollButton.addActionListener(e -> enrollStudent());
+
+        add(coursePanel, BorderLayout.CENTER);
+    }
+
+    private void createGradePanel() {
+        JPanel gradePanel = new JPanel(new FlowLayout());
+        studentComboBox = new JComboBox<>();
+        JButton assignGradeButton = new JButton("Assign Grade");
+        studentDetailsTextArea = new JTextArea(10, 30);
+        JScrollPane detailsScrollPane = new JScrollPane(studentDetailsTextArea);
+
+        gradePanel.add(new JLabel("Student:"));
+        gradePanel.add(studentComboBox);
+        gradePanel.add(assignGradeButton);
+        gradePanel.add(detailsScrollPane);
+
+        assignGradeButton.addActionListener(e -> assignGrade());
+
+        add(gradePanel, BorderLayout.SOUTH);
+    }
+
+    private void initializeData() {
+        students.add(new Student(1, "Alice", 20));
+        students.add(new Student(2, "Bob", 22));
+
+        courses.add(new Course("CS101", "Intro to CS"));
+        courses.add(new Course("MATH201", "Calculus"));
+
+        for (Course course : courses) {
+            courseComboBox.addItem(course);
+        }
+
+        for (Student student : students) {
+            studentComboBox.addItem(student);
+        }
+
+        updateStudentTable();
+    }
+
+    private void showAddStudentDialog() {
+        JTextField nameField = new JTextField(10);
+        JTextField ageField = new JTextField(5);
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Age:"));
+        panel.add(ageField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Add Student", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int id = students.size() + 1;
+                String name = nameField.getText();
+                int age = Integer.parseInt(ageField.getText());
+                students.add(new Student(id, name, age));
+                updateStudentTable();
+                updateStudentComboBox();
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid age input.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void showUpdateStudentDialog() {
+        JTextField idField = new JTextField(5);
+        JTextField nameField = new JTextField(10);
+        JTextField ageField = new JTextField(5);
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Student ID:"));
+        panel.add(idField);
+        panel.add(new JLabel("Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Age:"));
+        panel.add(ageField);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Update Student", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int id = Integer.parseInt(idField.getText());
+                String name = nameField.getText();
+                int age = Integer.parseInt(ageField.getText());
+                for (Student student : students) {
+                    if (student.getId() == id) {
+                        student.setName(name);
+                        student.setAge(age);
+                        updateStudentTable();
+                        updateStudentComboBox();
+                        return;
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Student ID not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid input.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void updateStudentTable() {
+        studentTableModel.setRowCount(0);
+        for (Student student : students) {
+            studentTableModel.addRow(new Object[]{student.getId(), student.getName(), student.getAge()});
+        }
+    }
+
+    private void updateStudentComboBox() {
+        studentComboBox.removeAllItems();
+        for (Student student : students) {
+            studentComboBox.addItem(student);
+        }
+    }
+
+    private void enrollStudent() {
+        Course selectedCourse = (Course) courseComboBox.getSelectedItem();
+        Student selectedStudent = (Student) JOptionPane.showInputDialog(
+                this,
+                "Select a Student to Enroll:",
+                "Enroll Student",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                students.toArray(),
+                students.get(0));
+
+        if (selectedStudent != null) {
+            grades.computeIfAbsent(selectedStudent, k -> new HashMap<>()).put(selectedCourse, "N/A");
+            updateStudentDetails();
+        }
+    }
+
+    private void assignGrade() {
+        Student selectedStudent = (Student) studentComboBox.getSelectedItem();
+        if (selectedStudent == null) {
+            return;
+        }
+
+        String grade = JOptionPane.showInputDialog(this, "Enter Grade:");
+        if (grade != null && !grade.isEmpty()) {
+            Course selectedCourse = (Course) JOptionPane.showInputDialog(
+                    this,
+                    "Select a Course:",
+                    "Assign Grade",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    grades.get(selectedStudent).keySet().toArray(),
+                    grades.get(selectedStudent).keySet().toArray()[0]);
+            if(selectedCourse != null){
+                grades.get(selectedStudent).put(selectedCourse, grade);
+                updateStudentDetails();
+            }
+
+        }
+    }
+    private void updateStudentDetails(){
+        Student selectedStudent = (Student) studentComboBox.getSelectedItem();
+        if (selectedStudent == null) {
+            return;
+        }
+        StringBuilder details = new StringBuilder("Student Details:\n");
+        if (grades.containsKey(selectedStudent)) {
+            for (Map.Entry<Course, String> entry : grades.get(selectedStudent).entrySet()) {
+                details.append(entry.getKey().getName()).append(": ").append(entry.getValue()).append("\n");
+            }
+        }
+        studentDetailsTextArea.setText(details.toString());
+    }
+
+    public static void main(
